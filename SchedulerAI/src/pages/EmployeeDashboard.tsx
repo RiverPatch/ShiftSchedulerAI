@@ -5,10 +5,8 @@ import { supabase } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CustomCard from "@/components/ui/CustomCard";
-import MyShifts from "../components/dashboard/MyShifts";
 import LeaveRequestForm from "../components/dashboard/LeaveRequestForm";
 import EmergencyLeave from "../components/dashboard/EmergencyLeave";
-import ShiftCalendar from "@/components/dashboard/ShiftCalendar";
 import ShiftSwapModal from "@/components/dashboard/ShiftSwapModal";
 import CustomButton from "@/components/ui/CustomButton";
 import Badge from "@/components/ui/badge";
@@ -27,7 +25,6 @@ const EmployeeDashboard: React.FC = () => {
   const [employees, setEmployees] = useState<User[]>([]);
   const [allShifts, setAllShifts] = useState<Shift[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [swapRequests, setSwapRequests] = useState<ShiftSwapRequest[]>([]);
 
   // State for shift swap modal
@@ -147,45 +144,43 @@ const EmployeeDashboard: React.FC = () => {
             </TabsList>
 
             <TabsContent value="my-schedule" className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="font-semibold text-lg text-[#001140]">Upcoming Shifts</h2>
-                <div className="flex space-x-2">
-                  <CustomButton
-                    variant={viewMode === "list" ? "primary" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                  >
-                    List View
-                  </CustomButton>
-                  <CustomButton
-                    variant={viewMode === "calendar" ? "primary" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("calendar")}
-                  >
-                    Calendar View
-                  </CustomButton>
-                </div>
-              </div>
+              <h2 className="font-semibold text-lg text-[#001140]">Upcoming Shifts</h2>
 
               {isLoading ? (
                 <div className="flex justify-center p-8">
                   <div className="w-8 h-8 border-4 border-t-[#261e67] rounded-full animate-spin"></div>
                 </div>
-              ) : viewMode === "list" ? (
-                <MyShifts
-                  shifts={myShifts.filter(
-                    (s) => new Date(s.date) >= new Date()
-                  )}
-                  onRequestSwap={handleRequestSwap}
-                />
+              ) : myShifts.filter((s) => new Date(s.date) >= new Date()).length === 0 ? (
+                <div className="text-center py-8 bg-[#f2fdff] rounded-lg">
+                  <p className="text-[#6f7d7f]">No upcoming shifts scheduled</p>
+                </div>
               ) : (
-                <ShiftCalendar
-                  shifts={myShifts.filter(
-                    (s) => new Date(s.date) >= new Date()
-                  )}
-                  employees={employees}
-                  onRequestSwap={handleRequestSwap}
-                />
+                <div className="space-y-3">
+                  {myShifts
+                    .filter((s) => new Date(s.date) >= new Date())
+                    .map((shift) => (
+                      <CustomCard
+                        key={shift.shift_id}
+                        isHoverable={true}
+                        onClick={() => handleRequestSwap(shift)}
+                        className="border border-primary hover:bg-[#e6f2f9]"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium text-[#001140]">
+                              {new Date(shift.date).toLocaleDateString()}
+                            </p>
+                            <p className="text-sm text-[#6f7d7f] mt-1">
+                              {shift.shift_start_time} - {shift.shift_end_time}
+                            </p>
+                          </div>
+                          <Badge className="bg-[#001140] text-[#f2fdff]">
+                            {shift.shift_status}
+                          </Badge>
+                        </div>
+                      </CustomCard>
+                    ))}
+                </div>
               )}
             </TabsContent>
 
